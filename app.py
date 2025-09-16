@@ -2,6 +2,7 @@
 """
 FastAPI Web Application for CI/CD Practice
 """
+import time
 from datetime import datetime
 from typing import List
 
@@ -32,7 +33,19 @@ class VersionResponse(BaseModel):
     framework: str
 
 
-# FastAPI ???�성
+class MetricsResponse(BaseModel):
+    uptime_seconds: int
+    requests_count: int
+    memory_usage_mb: float
+    cpu_usage_percent: float
+    status: str
+
+
+# 앱 시작 시간 추적
+APP_START_TIME = time.time()
+REQUESTS_COUNT = 0
+
+# FastAPI 앱 생성
 app = FastAPI(
     title="CI/CD Practice API",
     description="GitHub Actions�??�용??CI/CD ?�이?�라???�습??FastAPI ?�플리�??�션",
@@ -214,6 +227,31 @@ async def api_version():
     """
     return VersionResponse(
         version="1.0.0", build="initial", python_version="3.11+", framework="FastAPI"
+    )
+
+
+@app.get("/api/metrics", response_model=MetricsResponse, summary="Server Metrics", tags=["API"])
+async def api_metrics():
+    """
+    서버 메트릭스 정보를 반환합니다.
+
+    - 서버 가동 시간
+    - 요청 처리 횟수
+    - 메모리 사용량
+    - CPU 사용률
+    - 서버 상태
+    """
+    global REQUESTS_COUNT
+    REQUESTS_COUNT += 1
+
+    uptime = int(time.time() - APP_START_TIME)
+
+    return MetricsResponse(
+        uptime_seconds=uptime,
+        requests_count=REQUESTS_COUNT,
+        memory_usage_mb=85.7,  # Mock data for demo
+        cpu_usage_percent=12.3,  # Mock data for demo
+        status="healthy",
     )
 
 

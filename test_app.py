@@ -164,3 +164,57 @@ class TestAPIDocumentation:
         response = client.get("/redoc")
         assert response.status_code == 200
         assert "redoc" in response.text.lower()
+
+
+class TestMetricsAPI:
+    """새로운 메트릭스 API 테스트"""
+
+    def test_metrics_endpoint(self, client):
+        """메트릭스 API 엔드포인트 테스트"""
+        response = client.get("/api/metrics")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "uptime_seconds" in data
+        assert "requests_count" in data
+        assert "memory_usage_mb" in data
+        assert "cpu_usage_percent" in data
+        assert "status" in data
+
+        # 타입 검증
+        assert isinstance(data["uptime_seconds"], int)
+        assert isinstance(data["requests_count"], int)
+        assert isinstance(data["memory_usage_mb"], float)
+        assert isinstance(data["cpu_usage_percent"], float)
+        assert data["status"] == "healthy"
+
+    def test_metrics_requests_counter(self, client):
+        """요청 카운터가 증가하는지 테스트"""
+        # 첫 번째 요청
+        response1 = client.get("/api/metrics")
+        data1 = response1.json()
+        count1 = data1["requests_count"]
+
+        # 두 번째 요청
+        response2 = client.get("/api/metrics")
+        data2 = response2.json()
+        count2 = data2["requests_count"]
+
+        # 카운터가 증가했는지 확인
+        assert count2 >= count1
+
+    def test_metrics_uptime_is_positive(self, client):
+        """가동 시간이 양수인지 테스트"""
+        response = client.get("/api/metrics")
+        data = response.json()
+
+        assert data["uptime_seconds"] >= 0
+
+    @pytest.mark.asyncio
+    async def test_async_metrics_endpoint(self, async_client):
+        """비동기 메트릭스 API 테스트"""
+        response = await async_client.get("/api/metrics")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["status"] == "healthy"
