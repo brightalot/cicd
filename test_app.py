@@ -36,7 +36,7 @@ class TestRoutes:
         """헬스 체크 엔드포인트 테스트"""
         response = client.get("/health")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["status"] == "healthy"
         assert "message" in data
@@ -47,7 +47,7 @@ class TestRoutes:
         """API 상태 엔드포인트 테스트"""
         response = client.get("/api/status")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["application"] == "CI/CD Practice App"
         assert data["status"] == "running"
@@ -59,7 +59,7 @@ class TestRoutes:
         """버전 API 테스트"""
         response = client.get("/api/version")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["version"] == "1.0.0"
         assert "build" in data
@@ -70,7 +70,7 @@ class TestRoutes:
         """비동기 헬스 체크 테스트"""
         response = await async_client.get("/health")
         assert response.status_code == 200
-        
+
         data = response.json()
         assert data["status"] == "healthy"
 
@@ -108,7 +108,7 @@ class TestIntegration:
     def test_all_endpoints_accessible(self, client):
         """모든 엔드포인트가 접근 가능한지 테스트"""
         endpoints = ["/", "/health", "/api/status", "/api/version"]
-        
+
         for endpoint in endpoints:
             response = client.get(endpoint)
             assert response.status_code == 200, f"Failed for endpoint: {endpoint}"
@@ -116,11 +116,11 @@ class TestIntegration:
     def test_json_responses_valid(self, client):
         """JSON 응답이 유효한지 테스트"""
         json_endpoints = ["/health", "/api/status", "/api/version"]
-        
+
         for endpoint in json_endpoints:
             response = client.get(endpoint)
             assert response.status_code == 200
-            
+
             # JSON으로 파싱 가능한지 확인 (FastAPI 테스트 클라이언트 사용)
             try:
                 data = response.json()
@@ -132,7 +132,7 @@ class TestIntegration:
     async def test_async_endpoints(self, async_client):
         """비동기 엔드포인트 통합 테스트"""
         json_endpoints = ["/health", "/api/status", "/api/version"]
-        
+
         for endpoint in json_endpoints:
             response = await async_client.get(endpoint)
             assert response.status_code == 200
@@ -142,7 +142,7 @@ class TestIntegration:
 
 class TestAPIDocumentation:
     """API 문서화 테스트 (FastAPI 특화)"""
-    
+
     def test_openapi_schema(self, client):
         """OpenAPI 스키마 접근 테스트"""
         response = client.get("/openapi.json")
