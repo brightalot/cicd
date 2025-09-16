@@ -4,6 +4,7 @@ FastAPI Web Application for CI/CD Practice
 """
 from datetime import datetime
 from typing import List
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel

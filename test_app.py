@@ -4,9 +4,10 @@ Unit Tests for FastAPI CI/CD Practice App
 """
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
 from fastapi.testclient import TestClient
-from app import app, add, multiply, get_app_info
+from httpx import AsyncClient
+
+from app import add, app, get_app_info, multiply
 
 
 @pytest.fixture
