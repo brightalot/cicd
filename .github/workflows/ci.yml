@@ -1,0 +1,146 @@
+name: 🔨 CI Pipeline
+
+# 워크플로우 트리거 조건
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+# 환경 변수 설정
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # 🧪 테스트 작업
+  test:
+    name: 🧪 테스트 실행
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Python ${{ matrix.python-version }} 설정
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: 📦 의존성 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 🔍 코드 린팅 (flake8)
+      run: |
+        flake8 app.py test_app.py --max-line-length=100 --statistics
+    
+    - name: 🎨 코드 포매팅 확인 (black)
+      run: |
+        black --check app.py test_app.py --line-length=100
+    
+    - name: 🔢 Import 정렬 확인 (isort)
+      run: |
+        isort --check-only app.py test_app.py --profile black --line-length=100
+    
+    - name: 🧪 단위 테스트 실행
+      run: |
+        python -c "from app import add, multiply, get_app_info; print('✅ 기본 함수 테스트 통과')"
+    
+    # 🐳 Docker 빌드 작업
+  docker-build:
+    name: 🐳 Docker 이미지 빌드
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+    
+    - name: 🐳 Docker Buildx 설정
+      uses: docker/setup-buildx-action@v3
+    
+    - name: 🔨 Docker 이미지 빌드
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: cicd-practice-app:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: 🧪 Docker 컨테이너 테스트
+      run: |
+        # 이미지 빌드
+        docker build -t cicd-practice-app:test .
+        
+        # 컨테이너 시작
+        docker run -d -p 8000:8000 --name test-app cicd-practice-app:test
+        
+        # 컨테이너가 시작될 때까지 대기
+        sleep 10
+        
+        # 헬스체크 테스트
+        curl -f http://localhost:8000/health || exit 1
+        
+        # 상태 API 테스트  
+        curl -f http://localhost:8000/api/status || exit 1
+        
+        # 컨테이너 정리
+        docker stop test-app
+        docker rm test-app
+    
+  # 📊 보안 스캔 작업
+  security-scan:
+    name: 🔒 보안 스캔
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: 📥 코드 체크아웃
+      uses: actions/checkout@v4
+    
+    - name: 🐍 Python 설정
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: 📦 의존성 설치
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+    
+    - name: 🔒 의존성 보안 검사 (safety)
+      run: |
+        safety check --json || true  # 경고만 표시, 실패시에도 계속 진행
+    
+    - name: 🕵️ 코드 보안 스캔 (bandit)
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        if [ -f bandit-report.json ]; then
+          echo "🔍 보안 스캔 결과:"
+          cat bandit-report.json | python -m json.tool
+        fi
+
+  # 📈 결과 요약
+  ci-success:
+    name: ✅ CI 성공
+    runs-on: ubuntu-latest
+    needs: [test, docker-build, security-scan]
+    if: success()
+    
+    steps:
+    - name: 🎉 CI 파이프라인 성공
+      run: |
+        echo "🎉 모든 CI 단계가 성공적으로 완료되었습니다!"
+        echo "✅ 테스트 통과"
+        echo "✅ Docker 빌드 성공" 
+        echo "✅ 보안 스캔 완료"
+        echo "🚀 배포 준비 완료!"

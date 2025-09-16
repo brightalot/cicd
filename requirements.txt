@@ -1,0 +1,18 @@
+# CI/CD Practice App Dependencies
+fastapi>=0.68.0
+uvicorn[standard]>=0.15.0
+pydantic>=1.8.0
+
+# Testing Dependencies
+pytest>=6.0.0
+pytest-asyncio>=0.15.0
+httpx>=0.20.0
+pytest-cov>=3.0.0
+
+# Code Quality
+flake8>=4.0.0
+black>=22.0.0
+isort>=5.0.0
+
+# Development Dependencies
+python-dotenv>=0.19.0
